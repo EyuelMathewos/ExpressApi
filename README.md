@@ -1,6 +1,6 @@
 # ExpressApi
 
-## Created express api with code structure easy to manage code. 
+ Created express with express-generator package create custom api with code structure easy to manage. 
 
 ## User CRUD OPERATIONS   
    CREATE USER [http://localhost:3000/api/users] <br/>
