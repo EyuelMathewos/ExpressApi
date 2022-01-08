@@ -1,6 +1,6 @@
 # ExpressApi
 
-## Created express api with code structure easy to manage resources 
+## Created express api with code structure easy to manage code. 
 
 ## User CRUD OPERATIONS   
    CREATE USER [http://localhost:3000/api/users] <br/>
