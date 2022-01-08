@@ -42,37 +42,37 @@ router.route("/")
     try {
       const permission = privileges.can('admin').create('user');
       console.log(permission.granted);
-    if (permission.granted && res.statusCode == 200 ) {
-      bcrypt.genSalt(10, (err, salt) => {
-        bcrypt.hash(req.query.password, salt, (err, hashedPassword) => {
-          if (err) {
-            console.log(`ERROR : ${err}`);
-          } else {
-            req.query.password = hashedPassword;
+      if (permission.granted && res.statusCode == 200) {
+        bcrypt.genSalt(10, (err, salt) => {
+          bcrypt.hash(req.query.password, salt, (err, hashedPassword) => {
+            if (err) {
+              console.log(`ERROR : ${err}`);
+            } else {
+              req.query.password = hashedPassword;
 
-            maindb.create('test', req.query).then(
-              response => {
-                res.status(200).json({
-                  id: response.insertedId,
-                  user: req.query.name
-                })
-              }
-            ).catch(error => {
-              console.log("server error" + error)
-            })
+              maindb.create('test', req.query).then(
+                response => {
+                  res.status(200).json({
+                    id: response.insertedId,
+                    user: req.query.name
+                  })
+                }
+              ).catch(error => {
+                console.log("server error" + error)
+              })
 
 
-          }
+            }
+          });
         });
-      });
+      }
+    } catch (error) {
+      if (res.statusCode != 200 && res.statusCode != 422) {
+        res.status(403).send('resource is forbidden for this role');
+      }
+      //
+      console.log(error);
     }
-  } catch (error) {
-   if(res.statusCode!= 200 && res.statusCode!=422){
-     res.status(403).send('resource is forbidden for this role');
-    }
-    //
-    console.log(error);
-  }
   });
 
 router.route("/login")
@@ -105,6 +105,63 @@ router.route("/login")
       res.send("incorrect password or username")
     }
   });
+router.route("/:id")
+  .get(async (req, res, next) => {
+    try {
+      console.log(req);
+      const permission = privileges.can('admin').readAny('user');
+      console.log(permission.granted);
+      if (permission.granted) {
+        let value = await maindb.filtter('test', '_id', req.params.id)
+
+        res.send(value);
+      }
+    } catch (error) {
+      res.send(error);
+    }
+
+  })
+
+  .patch((req, res, next) => {
+    try {
+      const permission = privileges.can('admin').update('user');
+      console.log(permission.granted);
+      if (permission.granted && res.statusCode == 200) {
+
+
+        maindb.update('test', '_id', req.params.id, req.query).then(
+          response => {
+            res.status(200).json({
+              id: response.insertedId,
+              user: req.query.name
+            })
+          }
+        ).catch(error => {
+          console.log("server error" + error)
+        })
+
+      }
+    } catch (error) {
+      res.send(error);
+    }
+  })
+
+  .delete(async (req, res, next) => {
+    try {
+      const permission = privileges.can('admin').delete('user');
+      console.log(permission.granted);
+      if (permission.granted) {
+        let value = await maindb.delete('test', '_id', req.params.id)
+
+        res.send(value);
+      }
+    } catch (error) {
+      res.send(error);
+    }
+
+  })
+
+
 
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const mongodb = require('mongodb');
+const ObjectID = require('mongodb').ObjectID;
 const uri = process.env.MONGODBURL;
 const dbName = 'MovieSource';
 const client = new mongodb.MongoClient(uri,{ 
@@ -6,7 +7,6 @@ const client = new mongodb.MongoClient(uri,{
     useUnifiedTopology: true
 });
 let db;
-
 
 
     // function main (){
@@ -28,10 +28,11 @@ module.exports = {
     return db = client.db(dbName);
  },
  
-filtter: function (collection, value){
+filtter: function ( collection, id, value){
     return new Promise( async function(resolve, reject) {
     try {        
-        let val = await db.collection(collection).find({name :value}).toArray();
+        var objectID = new ObjectID(value);
+        let val = await db.collection(collection).find({[id] : objectID}).toArray();
         // console.log("value found account "+val.length);
         // if (val.length > 0) {
         //     return ('E-mail already in use');
@@ -72,38 +73,27 @@ create:  function (collection, value) {
         }}
     
 },
-
-update: async function (collection, value){
-    try {
-        //name: value
-        
-        let val = await db.collection(collection).updateOne({_id:value}).toArray();
-        console.log("value found account "+val.length);
-        if (val.length > 0) {
-            return ('E-mail already in use');
-        }
+update: function (collection, id, value, data){
+    return new Promise( async function(resolve, reject) {
+    try {        
+        var objectID = new ObjectID(value);
+        let val = await db.collection(collection).updateOne({[id] : objectID}, { $set: data });
+        resolve(val);
     } catch (error) {
-        if (error) {
-            console.log(`Error worth logging: ${error}`); // special case for some reason
-            return ('main server not responding');
-        }}
-    
+        reject(error);
+    }
+});
 },
-delete: async function (collection, value){
-    try {
-        //name: value
-        
-        let val = await db.collection(collection).deleteOne({_id:value}).toArray();
-        console.log("value found account "+val.length);
-        if (val.length > 0) {
-            return ('E-mail already in use');
-        }
+delete: function (collection, id ,value){
+    return new Promise( async function(resolve, reject) {
+    try {     
+        var objectID = new ObjectID(value);
+        let val = await db.collection(collection).deleteOne({[id] :objectID});
+        resolve(val);
     } catch (error) {
-        if (error) {
-            console.log(`Error worth logging: ${error}`); // special case for some reason
-            return ('main server not responding');
-        }}
-    
+        reject(error);
+    }
+});
 }
 
 };
