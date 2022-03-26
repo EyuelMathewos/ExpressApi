@@ -28,11 +28,11 @@ module.exports = {
     return db = client.db(dbName);
  },
  
-filtter: function ( collection, id, value){
+filtter: function ( collection, value){
     return new Promise( async function(resolve, reject) {
     try {        
-        var objectID = new ObjectID(value);
-        let val = await db.collection(collection).find({[id] : objectID}).toArray();
+       // var objectID = new ObjectID(value);
+        let val = await db.collection(collection).find(value).toArray();
         // console.log("value found account "+val.length);
         // if (val.length > 0) {
         //     return ('E-mail already in use');

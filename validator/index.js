@@ -10,7 +10,7 @@ function user() {
             min: 5,
             max: 30
         }).custom(async (value) => {
-            let values = await maindb.filtter('test', value)
+            let values = await maindb.filtter('test', { name : value })
                 .then(
                     response => {
                         // console.log(response);

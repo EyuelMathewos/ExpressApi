@@ -7,6 +7,7 @@ const {
   buildCheckFunction
 } = require("express-validator");
 var bcrypt = require('bcryptjs');
+const ObjectID = require('mongodb').ObjectID;
 var privileges = require('../accesscontrol/privilege');
 var maindb = require('../config/index.js');
 var db = maindb.getDb();
@@ -17,13 +18,13 @@ const {
 } = require("../validator/index.js");
 
 router.route("/")
-  /* GET users listing. */
+  /* GET Accounts listing. */
   .get(async (req, res, next) => {
     try {
-      const permission = privileges.can('admin').readAny('user');
+      const permission = privileges.can('admin').readAny('Account');
       console.log(permission.granted);
       if (permission.granted) {
-        let value = await maindb.getAll('test');
+        let value = await maindb.getAll('Account');
 
         value.map(data => {
           return data._id = data._id.toString();
@@ -40,7 +41,7 @@ router.route("/")
   // post
   .post(user(), validationResultHandler, (req, res, next) => {
     try {
-      const permission = privileges.can('admin').create('user');
+      const permission = privileges.can('admin').create('Account');
       console.log(permission.granted);
       if (permission.granted && res.statusCode == 200) {
         bcrypt.genSalt(10, (err, salt) => {
@@ -50,11 +51,11 @@ router.route("/")
             } else {
               req.query.password = hashedPassword;
 
-              maindb.create('test', req.query).then(
+              maindb.create('Account', req.query).then(
                 response => {
                   res.status(200).json({
                     id: response.insertedId,
-                    user: req.query.name
+                    Account: req.query.name
                   })
                 }
               ).catch(error => {
@@ -78,7 +79,7 @@ router.route("/")
 router.route("/login")
   .post(async (req, res, next) => {
 
-    let callresp = await maindb.filtter('test', req.query.name)
+    let callresp = await maindb.filtter('Account', {name : req.query.name})
       .then(
         response => {
           let value = bcrypt.compareSync(req.query.password, '$2a$10$EyKK4G6Eh978t0kG3n1waOeL0DjygO/rkd4arw154vqvd0kw3fgW6');
@@ -86,7 +87,7 @@ router.route("/login")
           if (value == true) {
             return Promise.resolve({
               id: response[0]._id,
-              user: req.query.name
+              Account: req.query.name
             });
 
           } else {
@@ -97,22 +98,22 @@ router.route("/login")
         return Promise.reject(error);
       })
 
-    if (callresp.id != null && callresp.user != null) {
+    if (callresp.id != null && callresp.Account != null) {
       console.log(callresp)
       res.status(200).json(callresp)
     } else {
       res.status(401);
-      res.send("incorrect password or username")
+      res.send("incorrect password or Accountname")
     }
   });
 router.route("/:id")
   .get(async (req, res, next) => {
     try {
-      console.log(req);
-      const permission = privileges.can('admin').readAny('user');
+      const permission = privileges.can('admin').readAny('Account');
       console.log(permission.granted);
       if (permission.granted) {
-        let value = await maindb.filtter('test', '_id', req.params.id)
+        var objectID = new ObjectID(req.params.id);
+        let value = await maindb.filtter('Account', {'_id': objectID})
 
         res.send(value);
       }
@@ -124,16 +125,16 @@ router.route("/:id")
 
   .patch((req, res, next) => {
     try {
-      const permission = privileges.can('admin').update('user');
+      const permission = privileges.can('admin').update('Account');
       console.log(permission.granted);
       if (permission.granted && res.statusCode == 200) {
 
 
-        maindb.update('test', '_id', req.params.id, req.query).then(
+        maindb.update('Account', '_id', req.params.id, req.query).then(
           response => {
             res.status(200).json({
               id: response.insertedId,
-              user: req.query.name
+              Account: req.query.name
             })
           }
         ).catch(error => {
@@ -148,10 +149,10 @@ router.route("/:id")
 
   .delete(async (req, res, next) => {
     try {
-      const permission = privileges.can('admin').delete('user');
+      const permission = privileges.can('admin').delete('Account');
       console.log(permission.granted);
       if (permission.granted) {
-        let value = await maindb.delete('test', '_id', req.params.id)
+        let value = await maindb.delete('Account', '_id', req.params.id)
 
         res.send(value);
       }
@@ -160,6 +161,80 @@ router.route("/:id")
     }
 
   })
+  //Access Tokens
+  .post((req, res, next) => {
+    try {
+        const permission = privileges.can('admin').create('accessTokens');
+        console.log(permission.granted);
+        if (permission.granted) {
+          console.log(req.body);
+            var objectID = new ObjectID(req.params.id);
+            let data = req.body;
+            data.clientID = objectID;
+            maindb.create('accessTokens', data).then(
+                response => {
+                    console.log(response);
+                    res.status(200).json({
+                         response
+                    })
+                }
+            ).catch(error => {
+                console.log("server error" + error)
+            })
+        }
+    } catch (error) {
+        res.send(error);
+    }
+});
+
+router.route("/:id/accessTokens")
+  .get(async (req, res, next) => {
+    try {
+      const permission = privileges.can('admin').readAny('accessTokens');
+      console.log(permission.granted);
+      if (permission.granted) {
+        var objectID = new ObjectID(req.params.id);
+        let value = await maindb.filtter('accessTokens', {'clientID': objectID})
+
+        res.send(value);
+      }
+    } catch (error) {
+      res.send(error);
+    }
+
+  })
+
+  router.route("/:id/accessTokens/:tokenid")
+  .get(async (req, res, next) => {
+      try {
+          const permission = privileges.can('admin').readAny('accessTokens');
+          console.log(permission.granted);
+          if (permission.granted) {
+              var objectTokenID = new ObjectID(req.params.tokenid);
+              var objectID = new ObjectID(req.params.id);
+              let value = await maindb.filtter('accessTokens', {'_id': objectTokenID,'clientID': objectID})
+              res.send(value);
+          }
+      } catch (error) {
+          res.send(error);
+      }
+
+  })
+
+  .delete(async (req, res, next) => {
+    try {
+        const permission = privileges.can('admin').delete('accessTokens');
+        console.log(permission.granted);
+        if (permission.granted) {
+            let value = await maindb.delete('accessTokens', {'_id': req.params.id})
+
+            res.send(value);
+        }
+    } catch (error) {
+        res.send(error);
+    }
+
+})
 
 
 

@@ -4,10 +4,11 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 require('dotenv').config();
-
+var maindb = require('./config/index'); 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var maindb = require('./config/index'); 
+var complaintRouter = require('./routes/complaint');
+var maintenanceRouter = require('./routes/maintenance');
 var db = maindb.getDb ();
 var app = express();
 
@@ -30,6 +31,8 @@ maindb.connectToServer(function(err){
 
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/complaint', complaintRouter);
+app.use('/api/maintenance', maintenanceRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
